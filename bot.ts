@@ -1,7 +1,9 @@
 import * as Discord from "discord.js";
 import { DISCORD_BOT_TOKEN } from "./config";
+import { PromiseResult, none, some, Result } from "./result";
 
 const client = new Discord.Client();
+
 client.login(DISCORD_BOT_TOKEN);
 client.once("ready", () => {
   console.log("Client logged in... Setting up client.");
@@ -15,12 +17,11 @@ client.on("message", async (context) => {
       title,
     });
 
-    console.log([result]);
-    if (result instanceof Error) {
-      return context.channel.send(result.message);
+    if (result.kind === "failure") {
+      return context.channel.send(result.error);
     }
 
-    return context.channel.send(result);
+    return context.channel.send(result.value);
   }
 });
 
@@ -32,22 +33,31 @@ type CreateChannelOptions = {
 async function createChannel(
   context: Discord.Message,
   options: CreateChannelOptions
-): Promise<string | Error> {
+): PromiseResult<string, string> {
+  if (options.category) {
+    return none(
+      "No olvides agregar una categoría \n" + `!create-channel category-name`
+    );
+  }
+
+  if (options.title) {
+    return none(
+      "No olvides agregar una categoría \n" +
+        `!create-channel ${options.category} channel-title`
+    );
+  }
+
+  const category = getCategory(context.guild, options.category);
+  if (category.kind === "failure") {
+    return none(`No puedo encontrar la categoría ${options.category}`);
+  }
+
   try {
-    if (options.category == null || options.title == null) {
-      return new Error("No pude crear el canal que me pediste");
-    }
-
-    const category = getCategory(context.guild, options.category);
-    if (category == null) {
-      return new Error("No puedo encontrar la categoría");
-    }
-
     await context.guild.channels.create(options.title, {
       type: "voice",
       topic: `A meetup hosted by ${context.member.nickname} about "${options.title}"`,
-      reason: `Meetup started`,
-      parent: category,
+      reason: "Meetup started",
+      parent: category.value,
       permissionOverwrites: [
         {
           type: "member",
@@ -57,13 +67,16 @@ async function createChannel(
       ],
     });
 
-    return "Tu canal esta listo";
+    return some("Tu canal esta listo");
   } catch (err) {
-    return new Error("No pude crear el canal que me pediste");
+    return none("No pude crear el canal que me pediste");
   }
 }
 
-function getCategory(guild: Discord.Guild, name: string) {
+function getCategory(
+  guild: Discord.Guild,
+  name: string
+): Result<Discord.GuildChannel, string> {
   const channel = guild.channels.cache.find(
     (channel) =>
       channel.name.toLowerCase().includes(name.toLowerCase()) &&
@@ -71,8 +84,8 @@ function getCategory(guild: Discord.Guild, name: string) {
   );
 
   if (!channel) {
-    return null;
+    return none();
   }
 
-  return channel;
+  return some(channel);
 }
