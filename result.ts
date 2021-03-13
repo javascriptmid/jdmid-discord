@@ -11,7 +11,7 @@ export interface Err<E> {
 export type Result<T, E> = Ok<T> | Err<E>;
 export type PromiseResult<T, E> = Promise<Result<T, E>>;
 
-export function some<T>(t: T): Ok<T> {
+export function some<T>(t?: T): Ok<T> {
   return { kind: "success", value: t };
 }
 export function none<E>(e?: E): Err<E> {
