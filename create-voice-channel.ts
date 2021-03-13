@@ -11,16 +11,17 @@ export default async function createVoiceChannel(
   context: Discord.Message,
   options: CreateVoiceChannelOptions
 ): PromiseResult<string, string> {
-  if (options.category) {
+  if (options.category == null) {
     return none(
-      "No olvides agregar una categoría \n" + `!create-channel category-name`
+      "No olvides agregar una categoría \n" +
+        `create-voice-channel category-name`
     );
   }
 
-  if (options.title) {
+  if (options.title == null) {
     return none(
-      "No olvides agregar una categoría \n" +
-        `!create-channel ${options.category} channel-title`
+      "No olvides agregar el nombre del canal \n" +
+        `create-voice-channel ${options.category} channel-title`
     );
   }
 
