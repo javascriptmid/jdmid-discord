@@ -1,6 +1,5 @@
 import * as Discord from "discord.js";
 import { PromiseResult, none, some } from "./result";
-import getCategory from "./get-category";
 
 type DeleteVoiceChannel = {
   title: string;
